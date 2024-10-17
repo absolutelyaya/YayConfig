@@ -1,0 +1,6 @@
+{
+  "screen.yayconfig.simplistic": "Simplistic",
+  "screen.yayconfig.config-screen.title": "Config Screen",
+
+  "command.yayconfig.open-config.invalid": "There's no known config with the id '%s'."
+}
