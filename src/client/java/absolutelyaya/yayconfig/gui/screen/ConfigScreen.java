@@ -6,8 +6,10 @@ import absolutelyaya.yayconfig.config.*;
 import absolutelyaya.yayconfig.gui.widget.ConfigWidget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
+import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -15,6 +17,7 @@ import net.minecraft.util.math.MathHelper;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ConfigScreen extends Screen
@@ -86,6 +89,21 @@ public class ConfigScreen extends Screen
 				width /2 - 125, 0, 0, 0.0f, 0.0f, 250, height, 32, 32);
 		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0xaaffffff);
 		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0xaa000000);
+	}
+	
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int button)
+	{
+		Element clicked = null;
+		for(Element i : children())
+			if(i.mouseClicked(mouseX, mouseY, button))
+				clicked = i;
+		if(clicked == null)
+			return false;
+		setFocused(clicked);
+		if (button == 0)
+			setDragging(true);
+		return true;
 	}
 	
 	@Override

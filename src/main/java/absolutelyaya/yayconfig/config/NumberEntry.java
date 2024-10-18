@@ -1,7 +1,5 @@
 package absolutelyaya.yayconfig.config;
 
-import java.util.List;
-
 public abstract class NumberEntry <T extends Number & Comparable<T>> extends ConfigEntry<T>
 {
 	protected T min, max;

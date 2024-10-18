@@ -60,7 +60,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			case BOOLEAN_TYPE -> valueWidget = CheckboxWidget.builder(Text.empty(), renderer).pos( getX() + 178, getY() + 14).maxWidth(20)
 											   .checked(Boolean.parseBoolean(value)).build();
 			case INT_TYPE, FLOAT_TYPE -> {
-				valueWidget = new TextFieldWidget(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
+				valueWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
 				((TextFieldWidget)valueWidget).setText(value);
 			}
 		}
@@ -107,7 +107,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 				getX() + 36, getY() + 2, 0xffffffff);
 		int controlWidth = switch(type)
 		{
-			case BOOLEAN_TYPE -> 22;
+			case BOOLEAN_TYPE -> 24;
 			default -> 52;
 			case ENUM_TYPE -> 72;
 		};
@@ -155,8 +155,8 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			if(valueWidget instanceof TextFieldWidget textField)
 				textField.setFocused(true);
 		}
-		else if(valueWidget instanceof TextFieldWidget textField && textField.isFocused())
-			textField.setFocused(false);
+		else if(valueWidget instanceof Numberfield numberField && numberField.isFocused())
+			numberField.setFocused(false);
 		if(b)
 		{
 			if(valueWidget instanceof CheckboxWidget checkbox)
@@ -171,28 +171,44 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers)
 	{
 		boolean b = ((Element)valueWidget).keyPressed(keyCode, scanCode, modifiers);
-		if(valueWidget instanceof TextFieldWidget text && type == INT_TYPE && keyCode == 259)
-			setRuleClient(text.getText());
+		if(valueWidget instanceof Numberfield field && keyCode == 259)
+			changeNumber(field.getText());
 		return b;
 	}
 	
 	@Override
 	public boolean charTyped(char chr, int modifiers)
 	{
-		boolean b = false;
-		if(chr >= 48 && chr <= 57 || (type == FLOAT_TYPE) && chr == '.')
-			b = ((Element)valueWidget).charTyped(chr, modifiers);
+		if(type == INT_TYPE && chr == '.')
+			return false;
+		boolean b = ((Element)valueWidget).charTyped(chr, modifiers);
 		if(b)
-		{
-			String text = ((TextFieldWidget)valueWidget).getText();
-			if(text.isEmpty())
-				text = "0";
-			if(type == INT_TYPE && Integer.parseInt(text) >= 0)
-				setRuleClient(Integer.parseInt(text));
-			else if(type == FLOAT_TYPE && Float.parseFloat(text) >= 0)
-				setRuleClient(Float.parseFloat(text));
-		}
+			changeNumber(((TextFieldWidget)valueWidget).getText());
 		return b;
+	}
+	
+	void changeNumber(String val)
+	{
+		if(val.isEmpty() || val.equals("."))
+			val = "0";
+		if(type == INT_TYPE)
+		{
+			if(val.contains("."))
+				val = val.split("\\.")[0];
+			int i = Integer.parseInt(val);
+			if(i >= 0)
+				setRuleClient(Integer.parseInt(val));
+		}
+		else if(type == FLOAT_TYPE)
+		{
+			if(val.startsWith("."))
+				val = "0" + val;
+			if(val.endsWith("."))
+				val = val + "0";
+			float f = Float.parseFloat(val);
+			if(f >= 0)
+				setRuleClient(Float.parseFloat(val));
+		}
 	}
 	
 	void setRuleClient(Object value)
