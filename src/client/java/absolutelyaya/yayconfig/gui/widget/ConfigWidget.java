@@ -31,6 +31,7 @@ import net.minecraft.util.math.Vec2f;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 
@@ -103,7 +104,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		RenderSystem.setShaderTexture(0, icon);
 		RenderingUtil.drawTexture(matrices.peek().getPositionMatrix(), new Vector4f(getX() + 2, getY() + 2, 32, 32), 1,
 				new Vec2f(32, 32), new Vector4f(0, 0, 32, -32), alpha);
-		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getPath())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
+		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getNamespace())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
 				getX() + 36, getY() + 2, 0xffffffff);
 		int controlWidth = switch(type)
 		{
@@ -111,7 +112,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			default -> 52;
 			case ENUM_TYPE -> 72;
 		};
-		Text fullText = Text.translatable(rule.getTranslationKey(parentId.getPath()) + ".description");
+		Text fullText = Text.translatable(rule.getTranslationKey(parentId.getNamespace()) + ".description");
 		List<OrderedText> lines = renderer.wrapLines(fullText.getWithStyle(Style.EMPTY.withColor(Formatting.GRAY)).getFirst(),
 				200 - 36 - controlWidth);
 		for (int i = 0; i < Math.min(lines.size(), 2); i++)
@@ -225,7 +226,10 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 				if(((CheckboxWidget)valueWidget).isChecked() != Boolean.parseBoolean(rule.getValue().toString()))
 					((CheckboxWidget)valueWidget).onPress();
 			}
-			case INT_TYPE -> ((TextFieldWidget)valueWidget).setText(rule.getValue().toString());
+			case FLOAT_TYPE, INT_TYPE -> {
+				if(valueWidget instanceof TextFieldWidget textField && !textField.isFocused())
+					textField.setText(rule.getValue().toString());
+			}
 			case ENUM_TYPE -> ((CyclingButtonWidget)valueWidget).setValue(cycleValues[Integer.parseInt(rule.getValue().toString())]);
 		}
 	}
@@ -266,8 +270,8 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		context.drawText(textRenderer, text, x, y, 0xffffffff, false);
 	}
 	
-	public <R extends ConfigEntry<?>> boolean isRule(R rule)
+	public String getRuleId()
 	{
-		return this.rule.getId().equals(rule.getId());
+		return rule.getId();
 	}
 }

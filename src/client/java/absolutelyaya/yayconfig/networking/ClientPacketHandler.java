@@ -6,6 +6,7 @@ import absolutelyaya.yayconfig.config.Constants;
 import absolutelyaya.yayconfig.config.EnumEntry;
 import absolutelyaya.yayconfig.gui.screen.ConfigScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.util.Identifier;
@@ -57,10 +58,26 @@ public class ClientPacketHandler implements Constants
 		byte type = data.getByte(TYPE_KEY);
 		switch(type)
 		{
-			case BOOLEAN_TYPE -> config.set(rule, data.getBoolean(VALUE_KEY), null);
-			case INT_TYPE -> config.set(rule, data.getInt(VALUE_KEY), null);
-			case FLOAT_TYPE -> config.set(rule, data.getFloat(VALUE_KEY), null);
-			case ENUM_TYPE -> config.set((EnumEntry<?>)config.getEntry(rule), data.getInt(VALUE_KEY), null);
+			case BOOLEAN_TYPE -> {
+				config.set(rule, data.getBoolean(VALUE_KEY), null);
+				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
+					screen.onExternalRuleUpdate(rule);
+			}
+			case INT_TYPE ->  {
+				config.set(rule, data.getInt(VALUE_KEY), null);
+				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
+					screen.onExternalRuleUpdate(rule);
+			}
+			case FLOAT_TYPE -> {
+				config.set(rule, data.getFloat(VALUE_KEY), null);
+				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
+					screen.onExternalRuleUpdate(rule);
+			}
+			case ENUM_TYPE -> {
+				config.set((EnumEntry<?>)config.getEntry(rule), data.getInt(VALUE_KEY), null);
+				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
+					screen.onExternalRuleUpdate(rule);
+			}
 		}
 	}
 }

@@ -111,10 +111,10 @@ public class ConfigScreen extends Screen
 		return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
 	}
 	
-	public <T extends ConfigEntry<?>> void onExternalRuleUpdate(T rule, String value)
+	public void onExternalRuleUpdate(String id)
 	{
 		for (ConfigWidget<?> widget : ruleWidgets)
-			if(widget.isRule(rule))
+			if(widget.getRuleId().equals(id))
 				widget.stateUpdate();
 	}
 	
