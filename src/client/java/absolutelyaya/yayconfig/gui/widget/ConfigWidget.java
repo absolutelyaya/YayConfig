@@ -103,7 +103,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		RenderSystem.setShaderTexture(0, icon);
 		RenderingUtil.drawTexture(matrices.peek().getPositionMatrix(), new Vector4f(getX() + 2, getY() + 2, 32, 32), 1,
 				new Vec2f(32, 32), new Vector4f(0, 0, 32, -32), alpha);
-		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey()).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
+		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getPath())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
 				getX() + 36, getY() + 2, 0xffffffff);
 		int controlWidth = switch(type)
 		{
@@ -111,7 +111,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			default -> 52;
 			case ENUM_TYPE -> 72;
 		};
-		Text fullText = Text.translatable(rule.getTranslationKey() + ".description");
+		Text fullText = Text.translatable(rule.getTranslationKey(parentId.getPath()) + ".description");
 		List<OrderedText> lines = renderer.wrapLines(fullText.getWithStyle(Style.EMPTY.withColor(Formatting.GRAY)).getFirst(),
 				200 - 36 - controlWidth);
 		for (int i = 0; i < Math.min(lines.size(), 2); i++)

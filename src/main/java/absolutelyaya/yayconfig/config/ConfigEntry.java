@@ -14,7 +14,6 @@ public abstract class ConfigEntry<T> implements Constants
 	{
 		this.id = id;
 		this.defaultValue = defaultValue;
-		translationKey = "config.ultracraft." + id;
 	}
 	
 	public String getId()
@@ -46,9 +45,11 @@ public abstract class ConfigEntry<T> implements Constants
 		return true;
 	}
 	
-	public String getTranslationKey()
+	public String getTranslationKey(String namespace)
 	{
-		return translationKey;
+		if(translationKey != null && !translationKey.isEmpty())
+			return translationKey;
+		return String.format("config.%s.%s", namespace, id);
 	}
 	
 	public ConfigEntry<T> setTranslationKey(String key)
