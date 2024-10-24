@@ -9,6 +9,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,7 @@ import java.util.*;
 
 public abstract class Config
 {
+	static final Identifier DEFAULT_BG_TEX = Identifier.of("textures/block/dirt.png");
 	static final Map<Identifier, Config> configMap = new HashMap<>();
 	
 	public final Map<String, ConfigEntry<?>> entries = new HashMap<>();
@@ -208,5 +210,15 @@ public abstract class Config
 	public static void saveAll(MinecraftServer server)
 	{
 		configMap.values().forEach(i -> i.save(server));
+	}
+	
+	public Text getTitle()
+	{
+		return Text.translatable("screen.yayconfig.config-screen.title");
+	}
+	
+	public Identifier getBackgroundTexture()
+	{
+		return DEFAULT_BG_TEX;
 	}
 }

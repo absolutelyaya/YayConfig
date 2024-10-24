@@ -9,7 +9,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -17,12 +16,11 @@ import net.minecraft.util.math.MathHelper;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class ConfigScreen extends Screen
 {
-	static final Identifier SIMPLE_BG_TEXTURE = YayConfig.indentifier("textures/gui/simplistic_bg.png");
+	static final Identifier SIMPLE_BG_TEX = YayConfig.indentifier("textures/gui/simplistic_bg.png");
 	public static ConfigScreen INSTANCE;
 	List<ConfigWidget<?>> ruleWidgets = new ArrayList<>();
 	float curScroll, desiredScroll;
@@ -76,7 +74,7 @@ public class ConfigScreen extends Screen
 			w.render(context, mouseX, mouseY, delta, simplistic.isChecked());
 		});
 		simplistic.render(context, mouseX, mouseY, delta);
-		context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 20, 0xffffffff);
+		context.drawCenteredTextWithShadow(textRenderer, config.getTitle(), width / 2, 20, 0xffffffff);
 	}
 	
 	@Override
@@ -85,7 +83,7 @@ public class ConfigScreen extends Screen
 		super.renderBackground(context, mouseX, mouseY, delta);
 		RenderSystem.setShader(GameRenderer::getPositionTexProgram);
 		RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.0f);
-		context.drawTexture(simplistic.isChecked() ? SIMPLE_BG_TEXTURE : Identifier.of("textures/block/dirt.png"),
+		context.drawTexture(simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
 				width /2 - 125, 0, 0, 0.0f, 0.0f, 250, height, 32, 32);
 		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0xaaffffff);
 		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0xaa000000);
@@ -131,5 +129,10 @@ public class ConfigScreen extends Screen
 	{
 		super.close();
 		INSTANCE = null;
+	}
+	
+	public Identifier getBackgroundTexture()
+	{
+		return config.getBackgroundTexture();
 	}
 }
