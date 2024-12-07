@@ -23,9 +23,9 @@ import java.util.*;
 public abstract class Config
 {
 	static final Identifier DEFAULT_BG_TEX = Identifier.of("textures/block/dirt.png");
-	static final Map<Identifier, Config> configMap = new HashMap<>();
+	static final Map<Identifier, Config> configMap = new LinkedHashMap<>();
 	
-	public final Map<String, ConfigEntry<?>> entries = new HashMap<>();
+	public final Map<String, ConfigEntry<?>> entries = new LinkedHashMap<>();
 	public final List<String> idList = new ArrayList<>();
 	final Identifier id;
 	

@@ -31,7 +31,7 @@ import net.minecraft.util.math.Vec2f;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
 
-import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,9 +60,15 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		{
 			case BOOLEAN_TYPE -> valueWidget = CheckboxWidget.builder(Text.empty(), renderer).pos( getX() + 178, getY() + 14).maxWidth(20)
 											   .checked(Boolean.parseBoolean(value)).build();
-			case INT_TYPE, FLOAT_TYPE -> {
+			case INT_TYPE -> {
 				valueWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
 				((TextFieldWidget)valueWidget).setText(value);
+			}
+			case FLOAT_TYPE -> {
+				valueWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
+				DecimalFormat format = new DecimalFormat("#.#");
+				format.setMaximumFractionDigits(6);
+				((TextFieldWidget)valueWidget).setText(format.format(rule.getValue()).replace(",", "."));
 			}
 		}
 		if(icon != null)
@@ -90,6 +96,8 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 	public void render(DrawContext context, int mouseX, int mouseY, float delta, boolean simplistic)
 	{
 		alpha = MathHelper.clamp((getY() - 30) / 10f, 0f, 1f);
+		if(alpha == 0f)
+			return;
 		RenderSystem.setShaderColor(0.69f, 0.69f, 0.69f, alpha);
 		RenderSystem.setShaderTexture(0, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE);
 		MatrixStack matrices = context.getMatrices();
@@ -190,6 +198,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 	
 	void changeNumber(String val)
 	{
+		val = val.replace(",", ".");
 		if(val.isEmpty() || val.equals("."))
 			val = "0";
 		if(type == INT_TYPE)
@@ -226,11 +235,19 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 				if(((CheckboxWidget)valueWidget).isChecked() != Boolean.parseBoolean(rule.getValue().toString()))
 					((CheckboxWidget)valueWidget).onPress();
 			}
-			case FLOAT_TYPE, INT_TYPE -> {
+			case FLOAT_TYPE -> {
+				if(valueWidget instanceof TextFieldWidget textField && !textField.isFocused())
+				{
+					DecimalFormat format = new DecimalFormat("#.#");
+					format.setMaximumFractionDigits(10);
+					textField.setText(format.format(rule.getValue()).replace(",", "."));
+				}
+			}
+			case INT_TYPE -> {
 				if(valueWidget instanceof TextFieldWidget textField && !textField.isFocused())
 					textField.setText(rule.getValue().toString());
 			}
-			case ENUM_TYPE -> ((CyclingButtonWidget)valueWidget).setValue(cycleValues[Integer.parseInt(rule.getValue().toString())]);
+			case ENUM_TYPE -> ((CyclingButtonWidget)valueWidget).setValue(rule.getValue().toString());
 		}
 	}
 	

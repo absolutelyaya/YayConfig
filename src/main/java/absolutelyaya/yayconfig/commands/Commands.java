@@ -42,7 +42,7 @@ public class Commands
 		Identifier configId = context.getArgument("configId", Identifier.class);
 		if(Config.getFromID(configId) == null)
 		{
-			context.getSource().sendFeedback(() -> Text.translatable("command.yayconfig.open-config.invalid", configId), false);
+			context.getSource().sendFeedback(() -> Text.translatable("command.yayconfig.open-config.invalid", configId.toString()), false);
 			return Command.SINGLE_SUCCESS;
 		}
 		ServerPlayNetworking.send(context.getSource().getPlayer(), new OpenConfigScreenPayload(configId));
