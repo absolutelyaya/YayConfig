@@ -52,10 +52,10 @@ public class YayConfig implements ModInitializer
 	
 	void onLoadConfig(MinecraftServer server, Identifier id, Config config)
 	{
-		if(!Events.onLoadConfigListeners.containsKey(id))
-			return;
 		config.load(server);
 		config.syncAll(server);
+		if(!Events.onLoadConfigListeners.containsKey(id))
+			return;
 		Events.onLoadConfigListeners.get(id).forEach(i -> i.accept(server));
 	}
 	
