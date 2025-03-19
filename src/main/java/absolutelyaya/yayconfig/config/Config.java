@@ -1,15 +1,12 @@
 package absolutelyaya.yayconfig.config;
 
-import absolutelyaya.yayconfig.YayConfig;
 import absolutelyaya.yayconfig.networking.FinishedSyncConfigS2CPayload;
 import absolutelyaya.yayconfig.networking.SyncAllConfigS2CPayload;
 import absolutelyaya.yayconfig.networking.SyncConfigS2CPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import org.jetbrains.annotations.Nullable;
@@ -20,27 +17,36 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
-public abstract class Config
+public abstract class Config extends AbstractConfig
 {
-	static final Identifier DEFAULT_BG_TEX = Identifier.of("textures/block/dirt.png");
 	static final Map<Identifier, Config> configMap = new LinkedHashMap<>();
-	
-	public final Map<String, ConfigEntry<?>> entries = new LinkedHashMap<>();
-	public final List<String> idList = new ArrayList<>();
-	final Identifier id;
 	
 	public Config(Identifier id)
 	{
-		this.id = id;
+		super(id);
 		configMap.put(id, this);
+	}
+	
+	public EnumEntry<?> set(EnumEntry<?> entry, int ordinal, @Nullable MinecraftServer server)
+	{
+		EnumEntry<?> v = super.set(entry, ordinal);
+		if(server != null)
+			save(server);
+		return v;
+	}
+	
+	public <V> ConfigEntry<V> set(String id, V value, @Nullable MinecraftServer server)
+	{
+		ConfigEntry<V> v = super.set(id, value);
+		if(server != null)
+			save(server);
+		return v;
 	}
 	
 	public static Config getFromID(Identifier configID)
 	{
 		return configMap.get(configID);
 	}
-	
-	protected abstract String getFileName();
 	
 	public void save(MinecraftServer server)
 	{
@@ -124,74 +130,6 @@ public abstract class Config
 			manager.getPlayerList().forEach(this::syncAll);
 	}
 	
-	public EnumEntry<?> set(EnumEntry<?> entry, int ordinal, @Nullable MinecraftServer server)
-	{
-		if(!entries.containsKey(entry.getId()))
-			return entry;
-		if(entries.get(entry.getId()) instanceof EnumEntry<?> enumEntry)
-			enumEntry.setValue(ordinal);
-		if(server != null)
-			save(server);
-		return entry;
-	}
-	
-	public <V> ConfigEntry<V> set(String id, V value, @Nullable MinecraftServer server)
-	{
-		if(!entries.containsKey(id))
-			return null;
-		try
-		{
-			ConfigEntry<V> entry = ((ConfigEntry<V>)entries.get(id));
-			entry.setValue(value);
-			if(server != null)
-				save(server);
-			return entry;
-		}
-		catch (Exception e)
-		{
-			YayConfig.LOGGER.error("Exception encountered when trying to set Config Value '{}'", id);
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public NbtCompound getAsNBT()
-	{
-		NbtCompound nbt = new NbtCompound();
-		for (ConfigEntry<?> entry : entries.values())
-		{
-			if(entry instanceof Comment)
-				continue;
-			nbt.put(entry.getId(), entry.getAsNBT());
-		}
-		return nbt;
-	}
-	
-	public ConfigEntry<?> getEntry(String id)
-	{
-		return entries.get(id);
-	}
-	
-	public void addEntry(ConfigEntry<?> entry)
-	{
-		if(entry instanceof Comment)
-		{
-			String id = entry.getId() + entries.values();
-			entries.put(id, entry);
-			idList.add(id);
-		}
-		else
-		{
-			entries.put(entry.getId(), entry);
-			idList.add(entry.id);
-		}
-	}
-	
-	public Identifier getId()
-	{
-		return id;
-	}
-	
 	public static void SyncAll(ServerPlayerEntity player)
 	{
 		configMap.forEach((id, config) -> config.syncAll(player));
@@ -210,15 +148,5 @@ public abstract class Config
 	public static void saveAll(MinecraftServer server)
 	{
 		configMap.values().forEach(i -> i.save(server));
-	}
-	
-	public Text getTitle()
-	{
-		return Text.translatable("screen.yayconfig.config-screen.title");
-	}
-	
-	public Identifier getBackgroundTexture()
-	{
-		return DEFAULT_BG_TEX;
 	}
 }

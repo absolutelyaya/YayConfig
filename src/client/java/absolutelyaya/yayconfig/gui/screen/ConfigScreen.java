@@ -26,13 +26,20 @@ public class ConfigScreen extends Screen
 	float curScroll, desiredScroll;
 	CheckboxWidget simplistic;
 	Vector2i nextButtonPos;
-	Config config;
+	AbstractConfig config;
+	Screen parent;
 	
-	public ConfigScreen(Config config)
+	public ConfigScreen(AbstractConfig config, Screen parent)
 	{
 		super(Text.translatable("screen.yayconfig.config-screen.title"));
 		INSTANCE = this;
 		this.config = config;
+		this.parent = parent;
+	}
+	
+	public ConfigScreen(AbstractConfig config)
+	{
+		this(config, null);
 	}
 	
 	@Override
@@ -127,7 +134,10 @@ public class ConfigScreen extends Screen
 	@Override
 	public void close()
 	{
-		super.close();
+		if(parent != null && client != null)
+			client.setScreen(parent);
+		else
+			super.close();
 		INSTANCE = null;
 	}
 	

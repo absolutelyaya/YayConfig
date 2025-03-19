@@ -8,7 +8,7 @@
 		"Absolutelyaya"
 	],
 	"contact": {
-		"homepage": "https://absolutelyaya.neocities.org/",
+		"homepage": "https://absolutelyaya.cool/",
 		"sources": "https://github.com/absolutelyaya/YayConfig"
 	},
 	"license": "MIT",
@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"absolutelyaya.yayconfig.YayConfigClient"
+		],
+		"modmenu": [
+			"absolutelyaya.yayconfig.ModMenu"
 		]
 	},
 	"mixins": [

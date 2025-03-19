@@ -31,8 +31,8 @@ public class YayConfig implements ModInitializer
 		PacketRegistry.registerC2S();
 		Commands.register();
 		
-		ServerLifecycleEvents.SERVER_STARTING.register(this::onLoadConfig);
-		ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, handler) -> onLoadConfig(server));
+		ServerLifecycleEvents.SERVER_STARTING.register(this::onLoadServerConfig);
+		ServerLifecycleEvents.START_DATA_PACK_RELOAD.register((server, handler) -> onLoadServerConfig(server));
 		
 		ServerPlayConnectionEvents.JOIN.register((networkHandler, sender, server) -> Config.SyncAll(networkHandler.player));
 		
@@ -45,12 +45,12 @@ public class YayConfig implements ModInitializer
 		return Identifier.of(MOD_ID, path);
 	}
 	
-	void onLoadConfig(MinecraftServer server)
+	void onLoadServerConfig(MinecraftServer server)
 	{
-		Config.getAll().forEach((id, config) -> onLoadConfig(server, id, config));
+		Config.getAll().forEach((id, config) -> onLoadServerConfig(server, id, config));
 	}
 	
-	void onLoadConfig(MinecraftServer server, Identifier id, Config config)
+	void onLoadServerConfig(MinecraftServer server, Identifier id, Config config)
 	{
 		config.load(server);
 		config.syncAll(server);
