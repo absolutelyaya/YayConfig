@@ -5,7 +5,6 @@ import absolutelyaya.yayconfig.accessor.WidgetAccessor;
 import absolutelyaya.yayconfig.config.ConfigEntry;
 import absolutelyaya.yayconfig.config.Constants;
 import absolutelyaya.yayconfig.networking.SyncConfigC2SPayload;
-import absolutelyaya.yayconfig.util.RenderingUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
@@ -16,10 +15,8 @@ import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.CyclingButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.*;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
@@ -27,70 +24,64 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec2f;
 import org.joml.Vector2i;
-import org.joml.Vector4f;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.List;
 
-public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget implements Element, Drawable, Selectable, Constants
+public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawable> extends ClickableWidget implements Element, Drawable, Selectable, Constants
 {
-	static final Identifier SIMPLE_BG_TEXTURE = YayConfig.indentifier("textures/gui/simplistic_bg.png");
+	static final Identifier SIMPLE_BG_TEXTURE = YayConfig.id("textures/gui/simplistic_bg.png");
 	static final Identifier BG_TEXTURE = Identifier.of("textures/block/stone.png");
-	static final Identifier PLACEHOLDER_ICON_TEXTURE = YayConfig.indentifier("textures/gui/placeholder_icon.png");
+	static final Identifier PLACEHOLDER_ICON_TEXTURE = YayConfig.id("textures/gui/placeholder_icon.png");
 	
 	final Identifier parentId;
 	final T rule;
-	final byte type;
 	final Identifier icon;
 	TextRenderer renderer;
-	String[] cycleValues;
-	Drawable valueWidget;
+	protected W controlWidget;
 	
-	public ConfigWidget(String value, Vector2i pos, T rule, byte type, Identifier icon, Identifier parentId)
+	public ConfigWidget(Vector2i pos, T rule, Identifier parentId)
 	{
 		super(pos.x, pos.y, 200, 36, Text.empty());
 		this.parentId = parentId;
 		this.rule = rule;
-		this.type = type;
 		renderer = MinecraftClient.getInstance().textRenderer;
-		switch(type)
-		{
-			case BOOLEAN_TYPE -> valueWidget = CheckboxWidget.builder(Text.empty(), renderer).pos( getX() + 178, getY() + 14).maxWidth(20)
-											   .checked(Boolean.parseBoolean(value)).build();
-			case INT_TYPE -> {
-				valueWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
-				((TextFieldWidget)valueWidget).setText(value);
-			}
-			case FLOAT_TYPE -> {
-				valueWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
-				DecimalFormat format = new DecimalFormat("#.#");
-				format.setMaximumFractionDigits(6);
-				((TextFieldWidget)valueWidget).setText(format.format(rule.getValue()).replace(",", "."));
-			}
-		}
-		if(icon != null)
-			this.icon = icon;
+		if(rule.getIcon() != null)
+			this.icon = rule.getIcon();
 		else
 			this.icon = PLACEHOLDER_ICON_TEXTURE;
 	}
 	
-	public ConfigWidget(String value, Vector2i pos, T rule, Enum<?>[] values, Identifier icon, Identifier parentId)
+	public static ConfigWidget<?, ?, ?> createGeneric(Vector2i pos, ConfigEntry<?> rule, Identifier parentId)
 	{
-		super(pos.x, pos.y, 200, 36, Text.empty());
-		this.parentId = parentId;
-		this.rule = rule;
-		this.cycleValues = Arrays.stream(values).map(Enum::name).toArray(String[]::new);
-		this.type = ENUM_TYPE;
-		renderer = MinecraftClient.getInstance().textRenderer;
-		valueWidget = CyclingButtonWidget.builder(o -> Text.of((String)o)).values(cycleValues).initially(value)
-							  .omitKeyText().build(getX() + 130, getY() + 14, 68, 20, Text.empty());
-		if(icon != null)
-			this.icon = icon;
-		else
-			this.icon = PLACEHOLDER_ICON_TEXTURE;
+		return switch(rule.getType())
+		{
+			case BOOLEAN_TYPE -> ConfigWidget.createB(pos, (ConfigEntry<Boolean>)rule, parentId);
+			case INT_TYPE -> createI(pos, (ConfigEntry<Integer>)rule, parentId);
+			case FLOAT_TYPE -> createF(pos, (ConfigEntry<Float>)rule, parentId);
+			default -> null;
+		};
+	}
+	
+	public static BooleanWidget createB(Vector2i pos, ConfigEntry<Boolean> rule, Identifier parentId)
+	{
+		return new BooleanWidget(pos, rule, parentId);
+	}
+	
+	public static IntWidget createI(Vector2i pos, ConfigEntry<Integer> rule, Identifier parentId)
+	{
+		return new IntWidget(pos, rule, parentId);
+	}
+	
+	public static FloatWidget createF(Vector2i pos, ConfigEntry<Float> rule, Identifier parentId)
+	{
+		return new FloatWidget(pos, rule, parentId);
+	}
+	
+	public static EnumWidget create(Vector2i pos, ConfigEntry<Enum<?>> rule, Enum<?>[] cycleValues, Identifier parentId)
+	{
+		return new EnumWidget(pos, rule, parentId, cycleValues);
 	}
 	
 	public void render(DrawContext context, int mouseX, int mouseY, float delta, boolean simplistic)
@@ -99,30 +90,20 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		if(alpha == 0f)
 			return;
 		RenderSystem.setShaderColor(0.69f, 0.69f, 0.69f, alpha);
-		RenderSystem.setShaderTexture(0, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE);
-		MatrixStack matrices = context.getMatrices();
-		RenderingUtil.drawTexture(matrices.peek().getPositionMatrix(), new Vector4f(getX(), getY(), 200, 36), 0,
-				new Vec2f(16, 16), new Vector4f(0f, 0, 100, 16), alpha);
+		context.drawTexture(RenderLayer::getGuiTextured, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0, 200, 36, 16, 16);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 		context.fill(getX(), getY(), getX() + 200, getY() + 1, 0xaaffffff);
 		context.fill(getX(), getY(), getX() + 1, getY() + 36, 0xaaffffff);
 		context.fill(getX(), getY() + 35, getX() + 200, getY() + 36, 0xaa000000);
 		context.fill(getX() + 199, getY(), getX() + 200, getY() + 36, 0xaa000000);
 		context.drawBorder(getX() + 2, getY() + 2, 32, 32, 0xffffffff);
-		RenderSystem.setShaderTexture(0, icon);
-		RenderingUtil.drawTexture(matrices.peek().getPositionMatrix(), new Vector4f(getX() + 2, getY() + 2, 32, 32), 1,
-				new Vec2f(32, 32), new Vector4f(0, 0, 32, -32), alpha);
+		context.drawTexture(RenderLayer::getGuiTextured, icon, getX() + 2, getY() + 2, 0, 0,
+				32, 32, 32, 32);
 		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getNamespace())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
 				getX() + 36, getY() + 2, 0xffffffff);
-		int controlWidth = switch(type)
-		{
-			case BOOLEAN_TYPE -> 24;
-			default -> 52;
-			case ENUM_TYPE -> 72;
-		};
 		Text fullText = Text.translatable(rule.getTranslationKey(parentId.getNamespace()) + ".description");
 		List<OrderedText> lines = renderer.wrapLines(fullText.getWithStyle(Style.EMPTY.withColor(Formatting.GRAY)).getFirst(),
-				200 - 36 - controlWidth);
+				200 - 36 - getControlWidth());
 		for (int i = 0; i < Math.min(lines.size(), 2); i++)
 		{
 			OrderedText t;
@@ -132,7 +113,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			{
 				StringBuilder sb = new StringBuilder();
 				lines.get(i).accept((a, b, c) -> {
-					if(a == 0)
+					if(a == 0 && b.getColor() != null)
 						sb.append(Formatting.byName(b.getColor().getName()));
 					sb.appendCodePoint(c);
 					return c > 0;
@@ -142,11 +123,13 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 			}
 			drawOutlinedText(context, renderer, t, getX() + 36, getY() + 13 + renderer.fontHeight * i, alpha);
 		}
-		((WidgetAccessor)valueWidget).setOffset(((WidgetAccessor)this).getOffset());
-		((WidgetAccessor)valueWidget).setAlpha(Math.max(alpha, 0.02f));
-		valueWidget.render(context, mouseX, mouseY, delta);
+		((WidgetAccessor) controlWidget).setOffset(((WidgetAccessor)this).getOffset());
+		((WidgetAccessor) controlWidget).setAlpha(Math.max(alpha, 0.02f));
+		controlWidget.render(context, mouseX, mouseY, delta);
 		super.render(context, mouseX, mouseY, delta);
 	}
+	
+	abstract int getControlWidth();
 	
 	@Override
 	protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta)
@@ -158,98 +141,54 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 	public boolean mouseClicked(double mouseX, double mouseY, int button)
 	{
 		boolean b = false;
-		if(((Element)valueWidget).isMouseOver(mouseX, mouseY))
+		if(((Element) controlWidget).isMouseOver(mouseX, mouseY))
 		{
-			b = ((Element)valueWidget).mouseClicked(mouseX, mouseY, button);
-			if(valueWidget instanceof TextFieldWidget textField)
-				textField.setFocused(true);
+			b = ((Element) controlWidget).mouseClicked(mouseX, mouseY, button);
+			if(controlWidget instanceof TextFieldWidget textField)
+				textField.setFocused(!textField.isFocused());
 		}
-		else if(valueWidget instanceof Numberfield numberField && numberField.isFocused())
-			numberField.setFocused(false);
 		if(b)
-		{
-			if(valueWidget instanceof CheckboxWidget checkbox)
-				setRuleClient(checkbox.isChecked());
-			else if(valueWidget instanceof CyclingButtonWidget<?> cycler)
-				setRuleClient(cycler.getValue());
-		}
+			onControlUpdated();
 		return b;
 	}
+	
+	abstract void onControlUpdated();
 	
 	@Override
 	public boolean keyPressed(int keyCode, int scanCode, int modifiers)
 	{
-		boolean b = ((Element)valueWidget).keyPressed(keyCode, scanCode, modifiers);
-		if(valueWidget instanceof Numberfield field && keyCode == 259)
-			changeNumber(field.getText());
+		boolean b = ((Element) controlWidget).keyPressed(keyCode, scanCode, modifiers);
+		if(keyCode == 259)
+			onControlUpdated();
 		return b;
 	}
 	
 	@Override
 	public boolean charTyped(char chr, int modifiers)
 	{
-		if(type == INT_TYPE && chr == '.')
+		if(!(controlWidget instanceof Numberfield number))
 			return false;
-		boolean b = ((Element)valueWidget).charTyped(chr, modifiers);
+		boolean b = number.charTyped(chr, modifiers);
 		if(b)
-			changeNumber(((TextFieldWidget)valueWidget).getText());
+			onControlUpdated();
 		return b;
 	}
 	
-	void changeNumber(String val)
+	protected String changeNumber(String val)
 	{
 		val = val.replace(",", ".");
 		if(val.isEmpty() || val.equals("."))
 			val = "0";
-		if(type == INT_TYPE)
-		{
-			if(val.contains("."))
-				val = val.split("\\.")[0];
-			int i = Integer.parseInt(val);
-			if(i >= 0)
-				setRuleClient(Integer.parseInt(val));
-		}
-		else if(type == FLOAT_TYPE)
-		{
-			if(val.startsWith("."))
-				val = "0" + val;
-			if(val.endsWith("."))
-				val = val + "0";
-			float f = Float.parseFloat(val);
-			if(f >= 0)
-				setRuleClient(Float.parseFloat(val));
-		}
+		return val;
 	}
 	
-	void setRuleClient(Object value)
+	void setRuleClient(V value)
 	{
 		rule.setValue(value);
 		ClientPlayNetworking.send(new SyncConfigC2SPayload(parentId, rule.getAsNBT()));
 	}
 	
-	public void stateUpdate()
-	{
-		switch(type)
-		{
-			case BOOLEAN_TYPE -> {
-				if(((CheckboxWidget)valueWidget).isChecked() != Boolean.parseBoolean(rule.getValue().toString()))
-					((CheckboxWidget)valueWidget).onPress();
-			}
-			case FLOAT_TYPE -> {
-				if(valueWidget instanceof TextFieldWidget textField && !textField.isFocused())
-				{
-					DecimalFormat format = new DecimalFormat("#.#");
-					format.setMaximumFractionDigits(10);
-					textField.setText(format.format(rule.getValue()).replace(",", "."));
-				}
-			}
-			case INT_TYPE -> {
-				if(valueWidget instanceof TextFieldWidget textField && !textField.isFocused())
-					textField.setText(rule.getValue().toString());
-			}
-			case ENUM_TYPE -> ((CyclingButtonWidget)valueWidget).setValue(rule.getValue().toString());
-		}
-	}
+	public abstract void onExternalUpdate();
 	
 	@Override
 	public void setFocused(boolean focused)
@@ -277,6 +216,7 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 	
 	void drawOutlinedText(DrawContext context, TextRenderer textRenderer, OrderedText text, int x, int y, float alpha)
 	{
+		MatrixStack matrices = context.getMatrices();
 		RenderSystem.setShaderColor(0.1f, 0.1f, 0.1f, alpha);
 		context.drawText(textRenderer, text, x - 1, y, 0xff444444, false);
 		context.drawText(textRenderer, text, x + 1, y, 0xff444444, false);
@@ -284,11 +224,187 @@ public class ConfigWidget<T extends ConfigEntry<?>> extends ClickableWidget impl
 		context.drawText(textRenderer, text, x, y - 1, 0xff444444, false);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 		
+		matrices.push();
+		matrices.translate(0, 0, 5);
 		context.drawText(textRenderer, text, x, y, 0xffffffff, false);
+		matrices.pop();
 	}
 	
 	public String getRuleId()
 	{
 		return rule.getId();
+	}
+	
+	public static class BooleanWidget extends ConfigWidget<ConfigEntry<Boolean>, Boolean, CheckboxWidget>
+	{
+		public BooleanWidget(Vector2i pos, ConfigEntry<Boolean> rule, Identifier parentId)
+		{
+			super(pos, rule, parentId);
+			controlWidget = CheckboxWidget.builder(Text.empty(), renderer).pos( getX() + 178, getY() + 14).maxWidth(20).checked(rule.getValue()).build();
+		}
+		
+		@Override
+		public void onExternalUpdate()
+		{
+			if(controlWidget.isChecked() != rule.getValue())
+				controlWidget.onPress();
+		}
+		
+		@Override
+		void onControlUpdated()
+		{
+			setRuleClient(controlWidget.isChecked());
+		}
+		
+		@Override
+		int getControlWidth()
+		{
+			return 24;
+		}
+	}
+	
+	public static class IntWidget extends ConfigWidget<ConfigEntry<Integer>, Integer, Numberfield>
+	{
+		public IntWidget(Vector2i pos, ConfigEntry<Integer> rule, Identifier parentId)
+		{
+			super(pos, rule, parentId);
+			controlWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
+			controlWidget.setText(String.valueOf(rule.getValue()));
+		}
+		
+		@Override
+		public void onExternalUpdate()
+		{
+			if(controlWidget.isFocused())
+				return;
+			controlWidget.setTextPredicate(s -> {
+				for (char c : s.toCharArray())
+				{
+					if(!Character.isDigit(c))
+						return false;
+				}
+				return true;
+			});
+			controlWidget.setText(rule.getValue().toString());
+		}
+		
+		@Override
+		void onControlUpdated()
+		{
+			changeNumber(controlWidget.getText());
+		}
+		
+		@Override
+		protected String changeNumber(String val)
+		{
+			val = super.changeNumber(val);
+			if(val.contains("."))
+				val = val.split("\\.")[0];
+			int i = Integer.parseInt(val);
+			if(i >= 0)
+				setRuleClient(Integer.parseInt(val));
+			return val;
+		}
+		
+		@Override
+		int getControlWidth()
+		{
+			return 52;
+		}
+		
+		@Override
+		public boolean charTyped(char chr, int modifiers)
+		{
+			if(chr == '.')
+				return false;
+			return super.charTyped(chr, modifiers);
+		}
+	}
+	
+	public static class FloatWidget extends ConfigWidget<ConfigEntry<Float>, Float, Numberfield>
+	{
+		public FloatWidget(Vector2i pos, ConfigEntry<Float> rule, Identifier parentId)
+		{
+			super(pos, rule, parentId);
+			controlWidget = new Numberfield(renderer, getX() + 151, getY() + 15, 46, 18, Text.empty());
+			controlWidget.setTextPredicate(s -> {
+				for (char c : s.toCharArray())
+				{
+					if(!(Character.isDigit(c) && c != '.'))
+						return false;
+				}
+				return !s.startsWith(".");
+			});
+			DecimalFormat format = new DecimalFormat("#.#");
+			format.setMaximumFractionDigits(6);
+			controlWidget.setText(format.format(rule.getValue()).replace(",", "."));
+		}
+		
+		@Override
+		public void onExternalUpdate()
+		{
+			if(controlWidget.isFocused())
+				return;
+			DecimalFormat format = new DecimalFormat("#.#");
+			format.setMaximumFractionDigits(10);
+			controlWidget.setText(format.format(rule.getValue()).replace(",", "."));
+		}
+		
+		@Override
+		void onControlUpdated()
+		{
+			changeNumber(controlWidget.getText());
+		}
+		
+		@Override
+		protected String changeNumber(String val)
+		{
+			val = super.changeNumber(val);
+			if(val.startsWith("."))
+				val = "0" + val;
+			if(val.endsWith("."))
+				val = val + "0";
+			float f = Float.parseFloat(val);
+			if(f >= 0)
+				setRuleClient(Float.parseFloat(val));
+			return val;
+		}
+		
+		@Override
+		int getControlWidth()
+		{
+			return 52;
+		}
+	}
+	
+	public static class EnumWidget extends ConfigWidget<ConfigEntry<Enum<?>>, Enum<?>, CyclingButtonWidget<Enum<?>>>
+	{
+		final Enum<?>[] cycleValues;
+		
+		public EnumWidget(Vector2i pos, ConfigEntry<Enum<?>> rule, Identifier parentId, Enum<?>[] cycleValues)
+		{
+			super(pos, rule, parentId);
+			this.cycleValues = cycleValues;
+			controlWidget = CyclingButtonWidget.builder((Enum<?> e) -> Text.of(e.name())).values(cycleValues).initially(rule.getValue())
+								  .omitKeyText().build(getX() + 130, getY() + 14, 68, 20, Text.empty());
+		}
+		
+		@Override
+		public void onExternalUpdate()
+		{
+			controlWidget.setValue(rule.getValue());
+		}
+		
+		@Override
+		int getControlWidth()
+		{
+			return 72;
+		}
+		
+		@Override
+		void onControlUpdated()
+		{
+			setRuleClient(controlWidget.getValue());
+		}
 	}
 }

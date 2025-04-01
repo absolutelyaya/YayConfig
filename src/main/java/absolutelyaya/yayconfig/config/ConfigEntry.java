@@ -28,9 +28,9 @@ public abstract class ConfigEntry<T> implements Constants
 		return value;
 	}
 	
-	public void setValue(Object value)
+	public void setValue(T value)
 	{
-		this.value = (T)value;
+		this.value = value;
 	}
 	
 	public String serialize()

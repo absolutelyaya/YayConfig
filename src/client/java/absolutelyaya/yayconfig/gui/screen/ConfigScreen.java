@@ -9,7 +9,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -20,9 +20,9 @@ import java.util.List;
 
 public class ConfigScreen extends Screen
 {
-	static final Identifier SIMPLE_BG_TEX = YayConfig.indentifier("textures/gui/simplistic_bg.png");
+	static final Identifier SIMPLE_BG_TEX = YayConfig.id("textures/gui/simplistic_bg.png");
 	public static ConfigScreen INSTANCE;
-	List<ConfigWidget<?>> ruleWidgets = new ArrayList<>();
+	List<ConfigWidget<?, ?, ?>> ruleWidgets = new ArrayList<>();
 	float curScroll, desiredScroll;
 	CheckboxWidget simplistic;
 	Vector2i nextButtonPos;
@@ -54,8 +54,7 @@ public class ConfigScreen extends Screen
 		if(simplistic != null)
 			b = simplistic.isChecked();
 		simplistic = addDrawableChild(CheckboxWidget.builder(
-				Text.translatable("screen.yayconfig.simplistic"), textRenderer)
-											  .pos(width / 2 + 130, height - 30).maxWidth(60).checked(b).build());
+				Text.translatable("screen.yayconfig.simplistic"), textRenderer).pos(width / 2 + 130, height - 30).maxWidth(60).checked(b).build());
 	}
 	
 	<K extends ConfigEntry<?>> void addRule(K key)
@@ -63,11 +62,9 @@ public class ConfigScreen extends Screen
 		if(key instanceof Comment)
 			return;
 		if(key instanceof EnumEntry<?> entry)
-			ruleWidgets.add(addDrawableChild(new ConfigWidget<>(entry.getValue().toString(), nextButtonPos, key,
-					entry.getValidOptions(), entry.getIcon(), config.getId())));
+			ruleWidgets.add(addDrawableChild(ConfigWidget.create(nextButtonPos, (ConfigEntry<Enum<?>>)key, entry.getValidOptions(), config.getId())));
 		else
-			ruleWidgets.add(addDrawableChild(new ConfigWidget<>(key.getValue().toString(), nextButtonPos, key,
-					key.getType(), key.getIcon(), config.getId())));
+			ruleWidgets.add(addDrawableChild(ConfigWidget.createGeneric(nextButtonPos, key, config.getId())));
 		nextButtonPos.add(0, 38);
 	}
 	
@@ -88,10 +85,10 @@ public class ConfigScreen extends Screen
 	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta)
 	{
 		super.renderBackground(context, mouseX, mouseY, delta);
-		RenderSystem.setShader(GameRenderer::getPositionTexProgram);
 		RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.0f);
-		context.drawTexture(simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
-				width /2 - 125, 0, 0, 0.0f, 0.0f, 250, height, 32, 32);
+		context.drawTexture(RenderLayer::getGuiTextured, simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
+				width /2 - 125, 0, 0, 0, 250, height, 32, 32);
+		//TODO: figure out why the alpha on this gets fucky when the top option fades
 		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0xaaffffff);
 		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0xaa000000);
 	}
@@ -120,9 +117,9 @@ public class ConfigScreen extends Screen
 	
 	public void onExternalRuleUpdate(String id)
 	{
-		for (ConfigWidget<?> widget : ruleWidgets)
+		for (ConfigWidget<?, ?, ?> widget : ruleWidgets)
 			if(widget.getRuleId().equals(id))
-				widget.stateUpdate();
+				widget.onExternalUpdate();
 	}
 	
 	@Override

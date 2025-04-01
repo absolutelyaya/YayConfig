@@ -51,11 +51,11 @@ public class EnumEntry<E extends Enum<E>> extends ConfigEntry<Enum<E>>
 	}
 	
 	@Override
-	public void setValue(Object value)
+	public void setValue(Enum<E> value)
 	{
 		for (E e : valueClass.getEnumConstants())
 		{
-			if (e.name().equals(value))
+			if (e.equals(value))
 			{
 				super.setValue(e);
 				return;

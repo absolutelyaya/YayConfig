@@ -38,7 +38,7 @@ public class TestConfig extends Config
 	
 	public TestConfig()
 	{
-		super(YayConfig.indentifier("test"));
+		super(YayConfig.id("test"));
 		//I literally just kept most config values from ultracraft for testing lol
 		addEntry(new Comment(" ## ############################# ##  #"));
 		addEntry(new Comment("     Welcome to Config Zone"));

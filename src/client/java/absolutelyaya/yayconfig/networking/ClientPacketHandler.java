@@ -8,8 +8,10 @@ import absolutelyaya.yayconfig.gui.screen.ConfigScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.util.Identifier;
+
+import java.util.List;
+import java.util.Optional;
 
 public class ClientPacketHandler implements Constants
 {
@@ -24,9 +26,9 @@ public class ClientPacketHandler implements Constants
 			NbtCompound data = payload.data();
 			for (String i : data.getKeys())
 			{
-				if(!data.contains(i, NbtElement.COMPOUND_TYPE))
+				if(!data.contains(i))
 					continue;
-				NbtCompound nbt = data.getCompound(i);
+				NbtCompound nbt = data.getCompound(i).orElse(new NbtCompound());
 				applyData(payload.configId(), nbt);
 			}
 		});
@@ -47,36 +49,48 @@ public class ClientPacketHandler implements Constants
 			YayConfig.LOGGER.error("S2C Sync -> No config with configId '{}' found", configId);
 			return;
 		}
-		if(!(data.contains(RULE_KEY, NbtElement.STRING_TYPE) &&
-					 data.contains(TYPE_KEY, NbtElement.BYTE_TYPE) &&
-					 data.contains(VALUE_KEY)))
+		if(!data.getKeys().containsAll(List.of(RULE_KEY, TYPE_KEY, VALUE_KEY)))
 		{
 			YayConfig.LOGGER.warn("Invalid S2C Sync Packet Received: {}", data.asString());
 			return;
 		}
-		String rule = data.getString(RULE_KEY);
-		byte type = data.getByte(TYPE_KEY);
-		switch(type)
+		Optional<String> rule = data.getString(RULE_KEY);
+		Optional<Byte> type = data.getByte(TYPE_KEY);
+		if(rule.isEmpty() || type.isEmpty())
+			return;
+		switch(type.get())
 		{
 			case BOOLEAN_TYPE -> {
-				config.set(rule, data.getBoolean(VALUE_KEY), null);
+				Optional<Boolean> v = data.getBoolean(VALUE_KEY);
+				if(v.isEmpty())
+					return;
+				config.set(rule.get(), v.get(), null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule);
+					screen.onExternalRuleUpdate(rule.get());
 			}
 			case INT_TYPE ->  {
-				config.set(rule, data.getInt(VALUE_KEY), null);
+				Optional<Integer> v = data.getInt(VALUE_KEY);
+				if(v.isEmpty())
+					return;
+				config.set(rule.get(), v.get(), null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule);
+					screen.onExternalRuleUpdate(rule.get());
 			}
 			case FLOAT_TYPE -> {
-				config.set(rule, data.getFloat(VALUE_KEY), null);
+				Optional<Float> v = data.getFloat(VALUE_KEY);
+				if(v.isEmpty())
+					return;
+				config.set(rule.get(), v.get(), null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule);
+					screen.onExternalRuleUpdate(rule.get());
 			}
 			case ENUM_TYPE -> {
-				config.set((EnumEntry<?>)config.getEntry(rule), data.getInt(VALUE_KEY), null);
+				Optional<Integer> v = data.getInt(VALUE_KEY);
+				if(v.isEmpty())
+					return;
+				config.set((EnumEntry<?>)config.getEntry(rule.get()), v.get(), null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule);
+					screen.onExternalRuleUpdate(rule.get());
 			}
 		}
 	}

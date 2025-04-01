@@ -40,7 +40,7 @@ public class YayConfig implements ModInitializer
 			new TestConfig();
 	}
 	
-	public static Identifier indentifier(String path)
+	public static Identifier id(String path)
 	{
 		return Identifier.of(MOD_ID, path);
 	}
