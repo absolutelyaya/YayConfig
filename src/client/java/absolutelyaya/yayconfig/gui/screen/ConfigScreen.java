@@ -76,6 +76,7 @@ public class ConfigScreen extends Screen
 		ruleWidgets.forEach(w -> {
 			((WidgetAccessor)w).setOffset(new Vector2i(0, Math.round(curScroll)));
 			w.render(context, mouseX, mouseY, delta, simplistic.isChecked());
+			context.draw();
 		});
 		simplistic.render(context, mouseX, mouseY, delta);
 		context.drawCenteredTextWithShadow(textRenderer, config.getTitle(), width / 2, 20, 0xffffffff);
@@ -88,9 +89,9 @@ public class ConfigScreen extends Screen
 		RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.0f);
 		context.drawTexture(RenderLayer::getGuiTextured, simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
 				width /2 - 125, 0, 0, 0, 250, height, 32, 32);
-		//TODO: figure out why the alpha on this gets fucky when the top option fades
-		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0xaaffffff);
-		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0xaa000000);
+		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0x88ffffff);
+		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0x88000000);
+		context.draw();
 	}
 	
 	@Override

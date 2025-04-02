@@ -18,9 +18,7 @@ import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -89,21 +87,23 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 		alpha = MathHelper.clamp((getY() - 30) / 10f, 0f, 1f);
 		if(alpha == 0f)
 			return;
+		MatrixStack matrices = context.getMatrices();
+		matrices.push();
 		RenderSystem.setShaderColor(0.69f, 0.69f, 0.69f, alpha);
-		context.drawTexture(RenderLayer::getGuiTextured, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0, 200, 36, 16, 16);
+		context.drawTexture(RenderLayer::getGuiTextured, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0,
+				200, 36, 16, 16);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-		context.fill(getX(), getY(), getX() + 200, getY() + 1, 0xaaffffff);
+		context.fill(getX() + 1, getY(), getX() + 200, getY() + 1, 0xaaffffff);
 		context.fill(getX(), getY(), getX() + 1, getY() + 36, 0xaaffffff);
 		context.fill(getX(), getY() + 35, getX() + 200, getY() + 36, 0xaa000000);
 		context.fill(getX() + 199, getY(), getX() + 200, getY() + 36, 0xaa000000);
-		context.drawBorder(getX() + 2, getY() + 2, 32, 32, 0xffffffff);
+		//context.drawBorder(getX() + 2, getY() + 2, 32, 32, 0xffffffff);
 		context.drawTexture(RenderLayer::getGuiTextured, icon, getX() + 2, getY() + 2, 0, 0,
 				32, 32, 32, 32);
 		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getNamespace())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
 				getX() + 36, getY() + 2, 0xffffffff);
 		Text fullText = Text.translatable(rule.getTranslationKey(parentId.getNamespace()) + ".description");
-		List<OrderedText> lines = renderer.wrapLines(fullText.getWithStyle(Style.EMPTY.withColor(Formatting.GRAY)).getFirst(),
-				200 - 36 - getControlWidth());
+		List<OrderedText> lines = renderer.wrapLines(fullText, 200 - 36 - getControlWidth());
 		for (int i = 0; i < Math.min(lines.size(), 2); i++)
 		{
 			OrderedText t;
@@ -123,10 +123,14 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 			}
 			drawOutlinedText(context, renderer, t, getX() + 36, getY() + 13 + renderer.fontHeight * i, alpha);
 		}
-		((WidgetAccessor) controlWidget).setOffset(((WidgetAccessor)this).getOffset());
-		((WidgetAccessor) controlWidget).setAlpha(Math.max(alpha, 0.02f));
+		((WidgetAccessor)controlWidget).setOffset(((WidgetAccessor)this).getOffset());
+		((WidgetAccessor)controlWidget).setAlpha(Math.max(alpha, 0.02f));
+		matrices.push();
+		matrices.translate(0, 0, 1000);
 		controlWidget.render(context, mouseX, mouseY, delta);
+		matrices.pop();
 		super.render(context, mouseX, mouseY, delta);
+		matrices.pop();
 	}
 	
 	abstract int getControlWidth();
@@ -216,18 +220,14 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 	
 	void drawOutlinedText(DrawContext context, TextRenderer textRenderer, OrderedText text, int x, int y, float alpha)
 	{
-		MatrixStack matrices = context.getMatrices();
 		RenderSystem.setShaderColor(0.1f, 0.1f, 0.1f, alpha);
-		context.drawText(textRenderer, text, x - 1, y, 0xff444444, false);
-		context.drawText(textRenderer, text, x + 1, y, 0xff444444, false);
-		context.drawText(textRenderer, text, x, y + 1, 0xff444444, false);
-		context.drawText(textRenderer, text, x, y - 1, 0xff444444, false);
+		context.drawText(textRenderer, text, x - 1, y, 0xff333333, false);
+		context.drawText(textRenderer, text, x + 1, y, 0xff333333, false);
+		context.drawText(textRenderer, text, x, y + 1, 0xff333333, false);
+		context.drawText(textRenderer, text, x, y - 1, 0xff333333, false);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 		
-		matrices.push();
-		matrices.translate(0, 0, 5);
-		context.drawText(textRenderer, text, x, y, 0xffffffff, false);
-		matrices.pop();
+		context.drawText(textRenderer, text, x, y, 0xffdddddd, false);
 	}
 	
 	public String getRuleId()
