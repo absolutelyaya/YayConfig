@@ -37,6 +37,7 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 	final Identifier icon;
 	TextRenderer renderer;
 	protected W controlWidget;
+	boolean client;
 	
 	public ConfigWidget(Vector2i pos, T rule, Identifier parentId)
 	{
@@ -183,7 +184,21 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 	void setRuleClient(V value)
 	{
 		rule.setValue(value);
-		ClientPlayNetworking.send(new SyncConfigC2SPayload(parentId, rule.getAsNBT()));
+		if(!isClient())
+			ClientPlayNetworking.send(new SyncConfigC2SPayload(parentId, rule.getAsNBT()));
+	}
+	
+	/**
+	 * @return whether this config entry belongs to clientside config
+	 */
+	boolean isClient()
+	{
+		return client;
+	}
+	
+	public void setClient()
+	{
+		client = true;
 	}
 	
 	public abstract void onExternalUpdate();

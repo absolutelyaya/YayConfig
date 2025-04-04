@@ -61,10 +61,14 @@ public class ConfigScreen extends Screen
 	{
 		if(key instanceof Comment)
 			return;
+		ConfigWidget<?, ?, ?> w;
 		if(key instanceof EnumEntry<?> entry)
-			ruleWidgets.add(addDrawableChild(ConfigWidget.create(nextButtonPos, (ConfigEntry<Enum<?>>)key, entry.getValidOptions(), config.getId())));
+			w = ConfigWidget.create(nextButtonPos, (ConfigEntry<Enum<?>>)key, entry.getValidOptions(), config.getId());
 		else
-			ruleWidgets.add(addDrawableChild(ConfigWidget.createGeneric(nextButtonPos, key, config.getId())));
+			w = ConfigWidget.createGeneric(nextButtonPos, key, config.getId());
+		if(config instanceof ClientConfig)
+			w.setClient();
+		ruleWidgets.add(addDrawableChild(w));
 		nextButtonPos.add(0, 38);
 	}
 	
