@@ -17,7 +17,6 @@ import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -51,6 +50,7 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 			this.icon = PLACEHOLDER_ICON_TEXTURE;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static ConfigWidget<?, ?, ?> createGeneric(Vector2i pos, ConfigEntry<?> rule, Identifier parentId)
 	{
 		return switch(rule.getType())
@@ -87,8 +87,6 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 		alpha = MathHelper.clamp((getY() - 30) / 10f, 0f, 1f);
 		if(alpha == 0f)
 			return;
-		MatrixStack matrices = context.getMatrices();
-		matrices.push();
 		RenderSystem.setShaderColor(0.69f, 0.69f, 0.69f, alpha);
 		context.drawTexture(RenderLayer::getGuiTextured, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0,
 				200, 36, 16, 16);
@@ -125,12 +123,8 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 		}
 		((WidgetAccessor)controlWidget).setOffset(((WidgetAccessor)this).getOffset());
 		((WidgetAccessor)controlWidget).setAlpha(Math.max(alpha, 0.02f));
-		matrices.push();
-		matrices.translate(0, 0, 1000);
 		controlWidget.render(context, mouseX, mouseY, delta);
-		matrices.pop();
 		super.render(context, mouseX, mouseY, delta);
-		matrices.pop();
 	}
 	
 	abstract int getControlWidth();
