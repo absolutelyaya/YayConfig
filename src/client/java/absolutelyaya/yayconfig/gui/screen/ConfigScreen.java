@@ -136,6 +136,8 @@ public class ConfigScreen extends Screen
 	@Override
 	public void close()
 	{
+		if(config instanceof ClientConfig cconfig)
+			cconfig.save(client);
 		if(parent != null && client != null)
 			client.setScreen(parent);
 		else
