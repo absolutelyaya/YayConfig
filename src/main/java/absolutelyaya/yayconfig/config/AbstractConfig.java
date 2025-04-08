@@ -31,6 +31,7 @@ public abstract class AbstractConfig
 		return entry;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <V> ConfigEntry<V> set(String id, V value)
 	{
 		if(!entries.containsKey(id))

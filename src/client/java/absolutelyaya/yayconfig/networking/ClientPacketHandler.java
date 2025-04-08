@@ -11,7 +11,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
-import java.util.Optional;
 
 public class ClientPacketHandler implements Constants
 {
@@ -28,7 +27,7 @@ public class ClientPacketHandler implements Constants
 			{
 				if(!data.contains(i))
 					continue;
-				NbtCompound nbt = data.getCompound(i).orElse(new NbtCompound());
+				NbtCompound nbt = data.getCompound(i);
 				applyData(payload.configId(), nbt);
 			}
 		});
@@ -54,43 +53,33 @@ public class ClientPacketHandler implements Constants
 			YayConfig.LOGGER.warn("Invalid S2C Sync Packet Received: {}", data.asString());
 			return;
 		}
-		Optional<String> rule = data.getString(RULE_KEY);
-		Optional<Byte> type = data.getByte(TYPE_KEY);
-		if(rule.isEmpty() || type.isEmpty())
-			return;
-		switch(type.get())
+		String rule = data.getString(RULE_KEY);
+		byte type = data.getByte(TYPE_KEY);
+		switch(type)
 		{
 			case BOOLEAN_TYPE -> {
-				Optional<Boolean> v = data.getBoolean(VALUE_KEY);
-				if(v.isEmpty())
-					return;
-				config.set(rule.get(), v.get(), null);
+				boolean v = data.getBoolean(VALUE_KEY);
+				config.set(rule, v, null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule.get());
+					screen.onExternalRuleUpdate(rule);
 			}
 			case INT_TYPE ->  {
-				Optional<Integer> v = data.getInt(VALUE_KEY);
-				if(v.isEmpty())
-					return;
-				config.set(rule.get(), v.get(), null);
+				int v = data.getInt(VALUE_KEY);
+				config.set(rule, v, null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule.get());
+					screen.onExternalRuleUpdate(rule);
 			}
 			case FLOAT_TYPE -> {
-				Optional<Float> v = data.getFloat(VALUE_KEY);
-				if(v.isEmpty())
-					return;
-				config.set(rule.get(), v.get(), null);
+				float v = data.getFloat(VALUE_KEY);
+				config.set(rule, v, null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule.get());
+					screen.onExternalRuleUpdate(rule);
 			}
 			case ENUM_TYPE -> {
-				Optional<Integer> v = data.getInt(VALUE_KEY);
-				if(v.isEmpty())
-					return;
-				config.set((EnumEntry<?>)config.getEntry(rule.get()), v.get(), null);
+				int v = data.getInt(VALUE_KEY);
+				config.set((EnumEntry<?>)config.getEntry(rule), v, null);
 				if(MinecraftClient.getInstance().currentScreen instanceof ConfigScreen screen)
-					screen.onExternalRuleUpdate(rule.get());
+					screen.onExternalRuleUpdate(rule);
 			}
 		}
 	}

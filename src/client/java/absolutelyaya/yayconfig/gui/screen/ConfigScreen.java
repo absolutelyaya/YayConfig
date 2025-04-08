@@ -9,7 +9,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -57,6 +56,7 @@ public class ConfigScreen extends Screen
 				Text.translatable("screen.yayconfig.simplistic"), textRenderer).pos(width / 2 + 130, height - 30).maxWidth(60).checked(b).build());
 	}
 	
+	@SuppressWarnings("unchecked")
 	<K extends ConfigEntry<?>> void addRule(K key)
 	{
 		if(key instanceof Comment)
@@ -66,7 +66,7 @@ public class ConfigScreen extends Screen
 			w = ConfigWidget.create(nextButtonPos, (ConfigEntry<Enum<?>>)key, entry.getValidOptions(), config.getId());
 		else
 			w = ConfigWidget.createGeneric(nextButtonPos, key, config.getId());
-		if(config instanceof ClientConfig)
+		if(config instanceof ClientConfig && w != null)
 			w.setClient();
 		ruleWidgets.add(addDrawableChild(w));
 		nextButtonPos.add(0, 38);
@@ -91,7 +91,7 @@ public class ConfigScreen extends Screen
 	{
 		super.renderBackground(context, mouseX, mouseY, delta);
 		RenderSystem.setShaderColor(0.5f, 0.5f, 0.5f, 1.0f);
-		context.drawTexture(RenderLayer::getGuiTextured, simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
+		context.drawTexture(simplistic.isChecked() ? SIMPLE_BG_TEX : getBackgroundTexture(),
 				width /2 - 125, 0, 0, 0, 250, height, 32, 32);
 		context.fill(width / 2 - 125, -1, width / 2 - 124, height + 1, 0x88ffffff);
 		context.fill(width / 2 + 125, -1, width / 2 + 124, height + 1, 0x88000000);
@@ -136,6 +136,8 @@ public class ConfigScreen extends Screen
 	@Override
 	public void close()
 	{
+		if(config instanceof ClientConfig cconfig)
+			cconfig.save(client);
 		if(parent != null && client != null)
 			client.setScreen(parent);
 		else
