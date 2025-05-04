@@ -16,6 +16,7 @@ import net.minecraft.client.gui.Selectable;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.*;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -88,7 +89,7 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 		if(alpha == 0f)
 			return;
 		RenderSystem.setShaderColor(0.69f, 0.69f, 0.69f, alpha);
-		context.drawTexture(simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0,
+		context.drawTexture(RenderLayer::getGuiTextured, simplistic ? SIMPLE_BG_TEXTURE : BG_TEXTURE, getX(), getY(), 0, 0,
 				200, 36, 16, 16);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 		context.fill(getX() + 1, getY(), getX() + 200, getY() + 1, 0xaaffffff);
@@ -96,7 +97,7 @@ public abstract class ConfigWidget<T extends ConfigEntry<V>, V, W extends Drawab
 		context.fill(getX(), getY() + 35, getX() + 200, getY() + 36, 0xaa000000);
 		context.fill(getX() + 199, getY(), getX() + 200, getY() + 36, 0xaa000000);
 		//context.drawBorder(getX() + 2, getY() + 2, 32, 32, 0xffffffff);
-		context.drawTexture(icon, getX() + 2, getY() + 2, 0, 0,
+		context.drawTexture(RenderLayer::getGuiTextured, icon, getX() + 2, getY() + 2, 0, 0,
 				32, 32, 32, 32);
 		context.drawTextWithShadow(renderer, Text.translatable(rule.getTranslationKey(parentId.getNamespace())).getWithStyle(Style.EMPTY.withUnderline(true)).getFirst(),
 				getX() + 36, getY() + 2, 0xffffffff);
